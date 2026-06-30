@@ -58,13 +58,3 @@ const PRODUCTS = [
   }
 ];
 
-
-//* function renderCategoryFilters() {
-  const container = document.getElementById('category-filters');
-  container.innerHTML = CATEGORIES.map(category => {
-    const activeClass = category === currentCategory
-      ? 'bg-leaf-600 text-white shadow-md'
-      : 'bg-white text-leaf-800 hover:bg-leaf-100';
-    return `<button onclick="filterCategory('${category}')" class="${activeClass} px-5 py-2 rounded-full font-medium transition-all border border-leaf-200">${category}</button>`;
-  }).join('');
-} //*
