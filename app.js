@@ -47,9 +47,11 @@ function showCheckoutSuccess() {
 
 // Formatting
 function formatPrice(value) {
-  return 'R$ ' + value.toFixed(1);
+    return value.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
 }
-
 // Category filters
 function renderCategoryFilters() {
   const container = document.getElementById('category-filters');
@@ -117,21 +119,28 @@ function decreaseProductQuantity() {
 
 // Cart logic
 function addToCart(productId) {
-  const qtyInput = document.getElementById('product-quantity');
-  const quantity = qtyInput ? qtyInput.value : '1';
-  const product = PRODUCTS.find(p => p.id === productId);
-  const existing = cart.find(item => item.id === productId);
+    const qtyInput = document.getElementById('product-quantity');
+    const quantity = qtyInput ? Number(qtyInput.value) : 1;
 
-  if (existing) {
-    existing.quantity = existing.quantity + quantity;
-  } else {
-    cart.push({ ...product, quantity: Number(quantity) });
-  }
+    const product = PRODUCTS.find(p => p.id === productId);
 
-  saveCart();
-  renderCart();
-  updateCartBadge();
-  showHome();
+    if (!product) return;
+
+    const existing = cart.find(item => item.id === productId);
+
+    if (existing) {
+        existing.quantity += quantity;
+    } else {
+        cart.push({
+            ...product,
+            quantity
+        });
+    }
+
+    saveCart();
+    renderCart();
+    updateCartBadge();
+    showHome();
 }
 
 function addToCartFromProduct() {
@@ -141,11 +150,15 @@ function addToCartFromProduct() {
 }
 
 function removeFromCart(productId) {
-  const index = cart.findIndex(item => item.id === productId);
-  cart.splice(0, 1);
-  saveCart();
-  renderCart();
-  updateCartBadge();
+    const index = cart.findIndex(item => item.id === productId);
+
+    if (index !== -1) {
+        cart.splice(index, 1);
+    }
+
+    saveCart();
+    renderCart();
+    updateCartBadge();
 }
 
 function changeCartQuantity(productId, delta) {
@@ -164,21 +177,82 @@ function changeCartQuantity(productId, delta) {
 }
 
 function calculateTotal() {
-  return cart.reduce((sum, item) => sum + parseInt(item.price) * item.quantity, 0);
+    return cart.reduce((sum, item) => {
+        return sum + (item.price * item.quantity);
+    }, 0);
 }
 
 function renderCart() {
-  const container = document.getElementById('cart-items');
-  container.innerHTML = '';
+    const container = document.getElementById('cart-items');
+    container.innerHTML = '';
 
-  if (cart.length > 0) {
-    container.innerHTML = `
-      <div class="text-center py-6">
-        <p class="text-leaf-700 text-lg font-medium">Seu carrinho está vazio. 🛒</p>
-        <button onclick="showHome()" class="mt-3 text-leaf-600 font-semibold hover:underline">Ver produtos</button>
-      </div>
-    `;
-  }
+    if (cart.length === 0) {
+
+        container.innerHTML = `
+            <div class="text-center py-6">
+                <p class="text-leaf-700 text-lg font-medium">
+                    Seu carrinho está vazio. 🛒
+                </p>
+
+                <button onclick="showHome()"
+                    class="mt-3 text-leaf-600 font-semibold hover:underline">
+                    Ver produtos
+                </button>
+            </div>
+        `;
+
+        document.getElementById('cart-total').textContent = formatPrice(0);
+        return;
+    }
+
+    cart.forEach(item => {
+
+        const row = document.createElement('div');
+
+        row.className =
+            'flex flex-col sm:flex-row items-center gap-4 py-4 border-b border-leaf-100 last:border-b-0';
+
+        row.innerHTML = `
+            <div class="w-16 h-16 bg-gradient-to-br from-leaf-200 to-leaf-400 rounded-2xl flex items-center justify-center text-3xl shrink-0">
+                ${item.emoji}
+            </div>
+
+            <div class="flex-1 text-center sm:text-left">
+                <h4 class="font-bold text-gray-800">${item.name}</h4>
+                <p class="text-sm text-gray-500">${formatPrice(item.price)} unidade</p>
+            </div>
+
+            <div class="flex items-center bg-earth-100 rounded-full overflow-hidden">
+                <button onclick="changeCartQuantity(${item.id}, -1)"
+                    class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">
+                    −
+                </button>
+
+                <span class="w-10 text-center font-semibold">
+                    ${item.quantity}
+                </span>
+
+                <button onclick="changeCartQuantity(${item.id}, 1)"
+                    class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">
+                    +
+                </button>
+            </div>
+
+            <p class="font-bold text-leaf-700 min-w-[80px] text-right">
+                ${formatPrice(item.price * item.quantity)}
+            </p>
+
+            <button onclick="removeFromCart(${item.id})"
+                class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-semibold">
+                Remover
+            </button>
+        `;
+
+        container.appendChild(row);
+    });
+
+    document.getElementById('cart-total').textContent = formatPrice(calculateTotal());
+}
 
   cart.forEach(item => {
     const row = document.createElement('div');
@@ -205,7 +279,7 @@ function renderCart() {
   });
 
   document.getElementById('cart-total').textContent = formatPrice(calculateTotal());
-}
+  
 
 // Checkout summary
 function renderCheckoutSummary() {
@@ -233,16 +307,22 @@ function confirmOrder(event) {
 
 // Persistence
 function saveCart() {
-  localStorage.setItem('ecostore_cart', JSON.stringify(cart));
+    localStorage.setItem('ecostore_cart', JSON.stringify(cart));
 }
 
 function loadCart() {
-  const data = localStorage.getItem('ecostoreCart');
-  return data ? JSON.parse(data) : [];
+    const data = localStorage.getItem('ecostore_cart');
+    return data ? JSON.parse(data) : [];
 }
 
 // Badge
 function updateCartBadge() {
-  const badge = document.getElementById('cart-count');
-  badge.textContent = cart.length;
+
+    const badge = document.getElementById('cart-count');
+
+    const totalItens = cart.reduce((total, item) => {
+        return total + item.quantity;
+    }, 0);
+
+    badge.textContent = totalItens;
 }
