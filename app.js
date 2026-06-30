@@ -1,58 +1,73 @@
-// EcoStore app logic
+// =======================
+// Estado
+// =======================
 
-// State
+const CART_KEY = "ecostore_cart";
+
 let cart = loadCart();
 let currentCategory = "Todos";
 let currentProductId = null;
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', () => {
+// =======================
+// Init
+// =======================
+
+document.addEventListener("DOMContentLoaded", () => {
   renderCategoryFilters();
   renderProducts();
   updateCartBadge();
 });
 
-// Navigation
+// =======================
+// Navegação
+// =======================
+
 function showScreen(id) {
-  const sections = document.querySelectorAll('section');
-  sections.forEach(section => section.classList.remove('active'));
-  const target = document.getElementById(id);
-  if (target) target.classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
 }
 
 function showHome() {
-  showScreen('home');
+  showScreen("home");
 }
 
 function showProduct(id) {
   currentProductId = id;
   renderProductDetails(id);
-  showScreen('product');
+  showScreen("product");
 }
 
 function showCart() {
   renderCart();
-  showScreen('cart');
+  showScreen("cart");
 }
 
 function showCheckout() {
+  if (cart.length === 0) return alert("Carrinho vazio");
   renderCheckoutSummary();
-  showScreen('checkout');
+  showScreen("checkout");
 }
 
 function showCheckoutSuccess() {
-  showScreen('checkout-success');
+  showScreen("checkout-success");
 }
 
-// Formatting
-function formatPrice(value) {
-    return value.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    });
+// =======================
+// Util
+// =======================
+
+function formatPrice(v) {
+  return v.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
-// Category filters
+
+// =======================
+// Categorias
+// =======================
+
 function renderCategoryFilters() {
   const container = document.getElementById('category-filters');
   container.innerHTML = CATEGORIES.map(category => {
@@ -63,111 +78,128 @@ function renderCategoryFilters() {
   }).join('');
 }
 
-function filterCategory(category) {
-  currentCategory = category;
+function filterCategory(c) {
+  currentCategory = c;
   renderCategoryFilters();
   renderProducts();
 }
 
-// Product rendering
-function renderProducts() {
-  const grid = document.getElementById('product-grid');
-  const filtered = currentCategory === 'Todos'
-    ? PRODUCTS
-    : PRODUCTS.filter(product => product.category === currentCategory);
+// =======================
+// Produtos
+// =======================
 
-  grid.innerHTML = filtered.map(product => `
-    <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all hover:-translate-y-1 overflow-hidden border border-leaf-100 cursor-pointer group" onclick="showProduct(${product.id})">
-      <div class="h-40 bg-gradient-to-br from-leaf-200 to-leaf-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-        <span class="text-6xl">${product.emoji}</span>
+function renderProducts() {
+  const grid = document.getElementById("product-grid");
+
+  const list =
+    currentCategory === "Todos"
+      ? PRODUCTS
+      : PRODUCTS.filter(p => p.category === currentCategory);
+
+  grid.innerHTML = list.map(p => `
+    <div class="bg-white rounded-xl shadow cursor-pointer"
+      onclick="showProduct(${p.id})">
+
+      <div class="text-center text-5xl p-6 bg-green-100">
+        ${p.emoji}
       </div>
-      <div class="p-5">
-        <span class="text-xs font-bold text-leaf-600 uppercase tracking-wide">${product.category}</span>
-        <h3 class="text-lg font-bold text-gray-800 mt-1 mb-2">${product.name}</h3>
-        <p class="text-leaf-700 font-bold text-xl mb-4">${formatPrice(product.price)}</p>
-        <button onclick="event.stopPropagation(); showProduct(${product.id})" class="w-full bg-leaf-100 hover:bg-leaf-200 text-leaf-800 py-2 rounded-xl font-semibold transition-colors">
-          Ver detalhes
+
+      <div class="p-4">
+        <p class="text-sm text-green-700">${p.category}</p>
+        <h3 class="font-bold">${p.name}</h3>
+        <p class="text-lg font-bold text-green-700">
+          ${formatPrice(p.price)}
+        </p>
+
+        <button
+          onclick="event.stopPropagation(); showProduct(${p.id})"
+          class="w-full mt-2 bg-green-100 rounded">
+          Ver
         </button>
       </div>
+
     </div>
-  `).join('');
+  `).join("");
 }
 
-// Product detail screen
-function renderProductDetails(id) {
-  const product = PRODUCTS.find(p => p.id === id);
-  if (!product) return;
+// =======================
+// Produto detalhe
+// =======================
 
-  document.getElementById('product-emoji').textContent = product.emoji;
-  document.getElementById('product-category').textContent = product.category;
-  document.getElementById('product-name').textContent = product.name;
-  document.getElementById('product-description').textContent = product.description;
-  document.getElementById('product-price').textContent = formatPrice(product.price);
-  document.getElementById('product-quantity').value = 1;
+function renderProductDetails(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById("product-emoji").textContent = p.emoji;
+  document.getElementById("product-category").textContent = p.category;
+  document.getElementById("product-name").textContent = p.name;
+  document.getElementById("product-description").textContent = p.description;
+  document.getElementById("product-price").textContent = formatPrice(p.price);
+  document.getElementById("product-quantity").value = 1;
 }
 
 function increaseProductQuantity() {
-  const input = document.getElementById('product-quantity');
-  input.value = Number(input.value) + 1;
+  const input = document.getElementById("product-quantity");
+  const p = PRODUCTS.find(x => x.id === currentProductId);
+
+  if (Number(input.value) < p.stock) input.value++;
 }
 
 function decreaseProductQuantity() {
-  const input = document.getElementById('product-quantity');
-  const value = Number(input.value);
-  if (value > 1) input.value = value - 1;
+  const input = document.getElementById("product-quantity");
+  if (Number(input.value) > 1) input.value--;
 }
 
-// Cart logic
-function addToCart(productId) {
-    const qtyInput = document.getElementById('product-quantity');
-    const quantity = qtyInput ? Number(qtyInput.value) : 1;
+// =======================
+// Carrinho
+// =======================
 
-    const product = PRODUCTS.find(p => p.id === productId);
+function addToCart(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
 
-    if (!product) return;
+  const qty = Number(
+    document.getElementById("product-quantity")?.value || 1
+  );
 
-    const existing = cart.find(item => item.id === productId);
+  const item = cart.find(x => x.id === id);
 
-    if (existing) {
-        existing.quantity += quantity;
-    } else {
-        cart.push({
-            ...product,
-            quantity
-        });
+  if (item) {
+    if (item.quantity + qty > p.stock) {
+      return alert("Estoque insuficiente");
     }
+    item.quantity += qty;
+  } else {
+    cart.push({ ...p, quantity: qty });
+  }
 
-    saveCart();
-    renderCart();
-    updateCartBadge();
-    showHome();
+  saveCart();
+  updateCartBadge();
+  showHome();
 }
 
 function addToCartFromProduct() {
-  if (currentProductId) {
-    addToCart(currentProductId);
-  }
+  if (currentProductId) addToCart(currentProductId);
 }
 
-function removeFromCart(productId) {
-    const index = cart.findIndex(item => item.id === productId);
-
-    if (index !== -1) {
-        cart.splice(index, 1);
-    }
-
-    saveCart();
-    renderCart();
-    updateCartBadge();
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  saveCart();
+  renderCart();
+  updateCartBadge();
 }
 
-function changeCartQuantity(productId, delta) {
-  const item = cart.find(item => item.id === productId);
+function changeCartQuantity(id, d) {
+  const item = cart.find(i => i.id === id);
+  const p = PRODUCTS.find(x => x.id === id);
   if (!item) return;
 
-  item.quantity += delta;
+  if (d > 0 && item.quantity >= p.stock) return alert("Limite estoque");
+
+  item.quantity += d;
+
   if (item.quantity <= 0) {
-    removeFromCart(productId);
+    removeFromCart(id);
     return;
   }
 
@@ -177,152 +209,85 @@ function changeCartQuantity(productId, delta) {
 }
 
 function calculateTotal() {
-    return cart.reduce((sum, item) => {
-        return sum + (item.price * item.quantity);
-    }, 0);
+  return cart.reduce((t, i) => t + i.price * i.quantity, 0);
 }
 
 function renderCart() {
-    const container = document.getElementById('cart-items');
-    container.innerHTML = '';
+  const el = document.getElementById("cart-items");
 
-    if (cart.length === 0) {
-
-        container.innerHTML = `
-            <div class="text-center py-6">
-                <p class="text-leaf-700 text-lg font-medium">
-                    Seu carrinho está vazio. 🛒
-                </p>
-
-                <button onclick="showHome()"
-                    class="mt-3 text-leaf-600 font-semibold hover:underline">
-                    Ver produtos
-                </button>
-            </div>
-        `;
-
-        document.getElementById('cart-total').textContent = formatPrice(0);
-        return;
-    }
-
-    cart.forEach(item => {
-
-        const row = document.createElement('div');
-
-        row.className =
-            'flex flex-col sm:flex-row items-center gap-4 py-4 border-b border-leaf-100 last:border-b-0';
-
-        row.innerHTML = `
-            <div class="w-16 h-16 bg-gradient-to-br from-leaf-200 to-leaf-400 rounded-2xl flex items-center justify-center text-3xl shrink-0">
-                ${item.emoji}
-            </div>
-
-            <div class="flex-1 text-center sm:text-left">
-                <h4 class="font-bold text-gray-800">${item.name}</h4>
-                <p class="text-sm text-gray-500">${formatPrice(item.price)} unidade</p>
-            </div>
-
-            <div class="flex items-center bg-earth-100 rounded-full overflow-hidden">
-                <button onclick="changeCartQuantity(${item.id}, -1)"
-                    class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">
-                    −
-                </button>
-
-                <span class="w-10 text-center font-semibold">
-                    ${item.quantity}
-                </span>
-
-                <button onclick="changeCartQuantity(${item.id}, 1)"
-                    class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">
-                    +
-                </button>
-            </div>
-
-            <p class="font-bold text-leaf-700 min-w-[80px] text-right">
-                ${formatPrice(item.price * item.quantity)}
-            </p>
-
-            <button onclick="removeFromCart(${item.id})"
-                class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-semibold">
-                Remover
-            </button>
-        `;
-
-        container.appendChild(row);
-    });
-
-    document.getElementById('cart-total').textContent = formatPrice(calculateTotal());
-}
-
-  cart.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'flex flex-col sm:flex-row items-center gap-4 py-4 border-b border-leaf-100 last:border-b-0';
-    row.innerHTML = `
-      <div class="w-16 h-16 bg-gradient-to-br from-leaf-200 to-leaf-400 rounded-2xl flex items-center justify-center text-3xl shrink-0">
-        ${item.emoji}
-      </div>
-      <div class="flex-1 text-center sm:text-left">
-        <h4 class="font-bold text-gray-800">${item.name}</h4>
-        <p class="text-sm text-gray-500">${formatPrice(item.price)} unidade</p>
-      </div>
-      <div class="flex items-center bg-earth-100 rounded-full overflow-hidden">
-        <button onclick="changeCartQuantity(${item.id}, -1)" class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">−</button>
-        <span class="w-10 text-center font-semibold">${item.quantity}</span>
-        <button onclick="changeCartQuantity(${item.id}, 1)" class="px-3 py-1 hover:bg-leaf-200 transition-colors text-leaf-800 font-bold">+</button>
-      </div>
-      <p class="font-bold text-leaf-700 min-w-[80px] text-right">${formatPrice(item.price * item.quantity)}</p>
-      <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-semibold">
-        Remover
-      </button>
+  if (cart.length === 0) {
+    el.innerHTML = `
+      <p class="text-center">Carrinho vazio</p>
     `;
-    container.appendChild(row);
-  });
+    document.getElementById("cart-total").textContent = formatPrice(0);
+    return;
+  }
 
-  document.getElementById('cart-total').textContent = formatPrice(calculateTotal());
-  
+  el.innerHTML = cart.map(i => `
+    <div class="flex justify-between border-b py-2">
 
-// Checkout summary
-function renderCheckoutSummary() {
-  const container = document.getElementById('checkout-summary');
-  container.innerHTML = cart.map(item => `
-    <div class="flex justify-between items-center py-2 border-b border-leaf-100 last:border-b-0">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">${item.emoji}</span>
-        <div>
-          <p class="font-semibold text-gray-800">${item.name}</p>
-          <p class="text-sm text-gray-500">${item.quantity}x ${formatPrice(item.price)}</p>
-        </div>
+      <div>
+        <p class="font-bold">${i.name}</p>
+        <p>${i.quantity}x ${formatPrice(i.price)}</p>
       </div>
-      <p class="font-bold text-leaf-700">${formatPrice(item.price * item.quantity)}</p>
-    </div>
-  `).join('');
 
-  document.getElementById('checkout-total').textContent = formatPrice(calculateTotal());
+      <div>
+        ${formatPrice(i.price * i.quantity)}
+      </div>
+
+      <button onclick="removeFromCart(${i.id})">
+        X
+      </button>
+
+    </div>
+  `).join("");
+
+  document.getElementById("cart-total").textContent =
+    formatPrice(calculateTotal());
 }
 
-function confirmOrder(event) {
-  event.preventDefault();
+// =======================
+// Checkout
+// =======================
+
+function renderCheckoutSummary() {
+  document.getElementById("checkout-summary").innerHTML =
+    cart.map(i => `
+      <p>${i.name} - ${i.quantity}x</p>
+    `).join("");
+
+  document.getElementById("checkout-total").textContent =
+    formatPrice(calculateTotal());
+}
+
+function confirmOrder(e) {
+  e.preventDefault();
+
+  cart = [];
+  saveCart();
+  updateCartBadge();
+
   showCheckoutSuccess();
 }
 
-// Persistence
+// =======================
+// Storage
+// =======================
+
 function saveCart() {
-    localStorage.setItem('ecostore_cart', JSON.stringify(cart));
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }
 
 function loadCart() {
-    const data = localStorage.getItem('ecostore_cart');
-    return data ? JSON.parse(data) : [];
+  return JSON.parse(localStorage.getItem(CART_KEY)) || [];
 }
 
+// =======================
 // Badge
+// =======================
+
 function updateCartBadge() {
+  const total = cart.reduce((t, i) => t + i.quantity, 0);
 
-    const badge = document.getElementById('cart-count');
-
-    const totalItens = cart.reduce((total, item) => {
-        return total + item.quantity;
-    }, 0);
-
-    badge.textContent = totalItens;
+  document.getElementById("cart-count").textContent = total;
 }
