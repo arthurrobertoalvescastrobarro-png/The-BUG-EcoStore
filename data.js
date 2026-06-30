@@ -26,7 +26,7 @@ const PRODUCTS = [
     description: "Escovas biodegradáveis com cabo de bambu natural. Uma alternativa ecológica ao plástico.",
     price: 24.90,
     category: "Higiene",
-    emoji: "🪥",
+    emoji: "🎋",
     stock: 40
   },
   {
@@ -57,4 +57,3 @@ const PRODUCTS = [
     stock: 20
   }
 ];
-
