@@ -100,9 +100,8 @@ function renderProducts() {
     <div class="bg-white rounded-xl shadow cursor-pointer"
       onclick="showProduct(${p.id})">
 
-      <div class="flex items-center justify-center h-40
-            bg-green-500/15
-            hover:bg-green-500/25
+      <div class="flex items-center justify-center h-40            
+            bg-gradient-to-br from-leaf-200 to-leaf-400 p-10 
             transition-all duration-300
             rounded-t-xl">
     <span class="text-6xl">${p.emoji}</span>
